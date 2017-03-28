@@ -1,18 +1,36 @@
 (function(){
   'use strict'
-  //initialize a leaflet map
-  var map = L.map('map')
-    .setView([40.708816,-74.008799], 11);
+
   
   //layer will be where we store the L.geoJSON we'll be drawing on the map
   var layer;
-
   var sql;
+  //add mapBox.light tileLayers options
+	var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+		mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
+	var grayscale   = L.tileLayer(mbUrl, {id: 'mapbox.light', attribution: mbAttr}),
+      satellite   = L.tileLayer(mbUrl, {id: 'mapbox.satellite', attribution: mbAttr}),
+      dark        = L.tileLayer(mbUrl, {id: 'mapbox.dark', attribution: mbAttr}),
+      outdoors    = L.tileLayer(mbUrl, {id: 'mapbox.outdoors', attribution: mbAttr}),
+		  streets     = L.tileLayer(mbUrl, {id: 'mapbox.streets',   attribution: mbAttr});
+      
+  //initialize a leaflet map
+	var map = L.map('map', {
+		center: [54.6128,-2.6806],
+		zoom: 6,
+		layers: [grayscale]
+	});
 
-  //add CartoDB 'dark matter' basemap
-  L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
-  }).addTo(map);
+	var baseLayers = {
+		"Grayscale": grayscale,
+		"Streets": streets,
+    "Satellite" : satellite,
+    "Dark": dark,
+    "Outdoors" : outdoors
+	};
+var overlays = {};
+	L.control.layers(baseLayers,overlays,{position:'bottomleft'}).addTo(map);
+
 
   var queryHistory = (localStorage.history) ? JSON.parse(localStorage.history) : [];
   var historyIndex = queryHistory.length;
@@ -70,7 +88,6 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
             $('#map').hide();
             $('#table').show();
           });
-
         }
         buildTable( features ); //build the table
       }
@@ -88,6 +105,7 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
       $('#table').show();
     } else {
       $('#map').show();
+      map.invalidateSize();
       $('#table').hide();
     }
   });
@@ -124,12 +142,19 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
       return false;
     }
   });
+  
+  //Toggle the sidebar 
+  $('.closeSide').click(function(){
+      $('#sidebar').toggleClass('slideIn', 300);
+      //Tell the map that the parent div has resized hence the slight delay
+      setTimeout(function(){ map.invalidateSize()}, 300);
+      $('#table').toggleClass('slideIn', 300);
+  })
 
   function propertiesTable( properties ) {
     if (!properties) {
       properties = {};
     }
-
     var table = $("<table><tr><th>Column</th><th>Value</th></tr></table>");
     var keys = Object.keys(properties);
     var banProperties = ['geom'];
@@ -182,7 +207,6 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
 
     //first build the header row
     var fields = Object.keys( features[0].properties );
-
     $('#table').find('thead').append('<tr/>');
     $('#table').find('tfoot').append('<tr/>');
 
@@ -199,8 +223,6 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
         $tr.append('<td>' + feature.properties[field] + '</td>')
       })
 
-
-
       $('#table').find('tbody').append($tr);
     });
 
@@ -211,6 +233,8 @@ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreet
     $('#table').find('thead').empty();
     $('#table').find('tfoot').empty();
     $('#table').find('tbody').empty();
+    //Remove the Bootstrap paignation
+    $('#table').find('div > .row:last-child').empty();
   };
 
   function addToHistory(sql) {
