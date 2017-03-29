@@ -1,11 +1,12 @@
 (function(){
   'use strict'
 
-  
+
   //layer will be where we store the L.geoJSON we'll be drawing on the map
   var layer;
   var sql;
   var currentLayer = 'Grayscale';
+  var oldLayer;
   //add mapBox.light tileLayers options
 	var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 		mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -29,13 +30,22 @@
     "Dark": dark,
     "Outdoors" : outdoors
 	};
+  
 var overlays = [];
-	L.control.layers(baseLayers,overlays,{position:'bottomleft'}).addTo(map);
+	var lcontrol = L.control.layers(baseLayers,overlays,{position:'bottomleft'}).addTo(map);
 
 
   var queryHistory = (localStorage.history) ? JSON.parse(localStorage.history) : [];
   var historyIndex = queryHistory.length;
   updateHistoryButtons();
+  
+  //Listen for the baselayer changing
+  map.on('baselayerchange', function(updatedLayer) {
+    if(layer){
+      setColourForLayer(updatedLayer);
+    }
+    return currentLayer = updatedLayer;
+  });
 
   //listen for submit of new query
   $('#run').click(function(){
@@ -48,16 +58,14 @@ var overlays = [];
     $('#run').addClass('active');
 
     clearTable();
-
-    sql = editor.getDoc().getValue();
-    
-    //clear the map
-    if( map.hasLayer(layer)) {
+    //Clear the layers if there are no overlays
+    if( map.hasLayer(layer) && overlays.length == 0) {
       layer.clearLayers();
     }
-
+    sql = editor.getDoc().getValue();
+    
     addToHistory(sql);
-  
+
     //pass the query to the sql api endpoint
     $.getJSON('/sql?q=' + encodeURIComponent(sql), function(data) {
       $('#run').removeClass('active');
@@ -91,7 +99,23 @@ var overlays = [];
             $('#table').show();
           });
         }
-        buildTable( features ); //build the table
+
+        buildTable( features ); //build the DataTable
+
+        //Check if the layer is in the overlays array
+        if(overlays.length > 0) {
+          if(overlays[overlays.length-1]._leaflet_id !== oldLayer._leaflet_id){
+            map.removeLayer(oldLayer);
+            }
+          } else {
+            if(oldLayer){
+              map.removeLayer(oldLayer);
+            };
+          };
+          if(map.hasLayer(layer)) {
+            return oldLayer = layer;
+          }
+      
       }
     });
   };
@@ -113,9 +137,27 @@ var overlays = [];
   });
   //Add query to overlays
   $(document).on('click', ".overlaysOption", function() {
+
     //Remove previous label
-    $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
      addToOverlays();
+     
+    //Remove overlay buttons 
+    if($('#remove').length == 0){
+      $('.leaflet-control-container').append($("<div id='remove' class='btn btn-info'></div>").text('Delete Overlays'));
+    } else {$('#remove').removeClass('disabled')};
+  });
+
+  $(document).on('click', "#remove", function() {
+     $('#remove').addClass('disabled');
+     overlays.forEach( function( layer ) {
+       layer.clearLayers();
+      })
+     overlays = [];
+     //update the control label with the new amount of overlays
+     $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
+     L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
+     //Also stop the notification being click again 
+     $('#notifications').hide();
   });
 
   //forward and backward buttons for query history
@@ -176,11 +218,7 @@ var overlays = [];
     }
     return '<table border="1">' + table.html() + '</table>';
   }
-  map.on('baselayerchange', function(currentLayer) {
-    if(layer){
-      setColourForLayer(currentLayer);
-    }
-  });
+
   //Check which layer is the baselayer and then edit the layer styles
   function setColourForLayer(currentLayer) {
     switch(currentLayer.name) {
@@ -244,9 +282,8 @@ var overlays = [];
       $('#notifications').empty();
   }
 
-  function buildTable( features ) {
+ function buildTable( features ) {
     //assemble a table from the geojson properties
-
     //first build the header row
     var fields = Object.keys( features[0].properties );
     $('#table').find('thead').append('<tr/>');
@@ -271,16 +308,20 @@ var overlays = [];
       $('#table>table').DataTable();
   }
 
+
   function clearTable() {
     $('#table').find('thead').empty();
     $('#table').find('tfoot').empty();
     $('#table').find('tbody').empty();
   };
+  
   function addToOverlays() {
     if(jQuery.inArray(layer, overlays) == -1) {
+      if($('.leaflet-control-layers-list')){
+        $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
+      };
       overlays.push(layer);
       L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
-      console.log(overlays);
     }
   };
 

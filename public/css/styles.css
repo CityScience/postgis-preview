@@ -98,7 +98,12 @@ body {
 .navbar .btn-group {
   margin-right:0;
 }
-
+#remove {
+  z-index: 500;
+  position: absolute;
+  left: 120px;
+  bottom: 20px;
+}
 #notifications {
   margin-top: 15px;
   white-space: pre-line;
@@ -107,6 +112,7 @@ body {
 #table {
   margin-right: 300px;
   transition: margin 0.3s;
+  background: #fff;
 }
 #table.slideIn {
   margin-right: 0;
@@ -168,4 +174,11 @@ body {
 .leaflet-popup-content {
   max-height: 50vh;
   overflow-y: scroll;
+}
+
+/*MEDIA QUERY*/
+@media (max-width: 770px) {
+  #container {
+    padding-top: 50px;
+  }
 }
