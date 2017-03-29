@@ -13,6 +13,7 @@ body {
   position: relative;
   display: block;
 }
+
 #sidebar {
   width: 300px;
   height: 100%;
@@ -21,6 +22,7 @@ body {
   -webkit-transition: all 0.25s ease-out;
   -moz-transition: all 0.25s ease-out;
   transition: all 0.25s ease-out;
+  position: relative;
 }
 .navbar .navbar-brand {
   font-weight: bold;
@@ -38,18 +40,77 @@ body {
   margin-bottom: 15px;
 }
 
+#sidebar .closeSide {
+  position: absolute;
+  z-index: 20;
+  background: #272822;
+  left: -30px;
+  width: 30px;
+  text-align: center;
+  height: 30px;
+}
+#sidebar .closeSide span {
+  background: #fff;
+  width: 20px;
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  right: 5px;
+  transition: 0.3s;
+  transform: rotate(42deg);
+}
+#sidebar .closeSide span:after {
+  content: "";
+  background: #fff;
+  width: 20px;
+  position: absolute;
+  top: 0;
+  height: 3px;
+  left: 0;
+  transform: rotate(-82deg);
+}
+#sidebar .closeSide span:before {
+  content: "";
+  background: #fff;
+  position: absolute;
+  top: 0;
+  height: 3px;
+  left: 0;
+ transform: rotate(-33deg) translateY(-4px);
+  width: 14px;
+  opacity: 0;;
+}
+#sidebar.slideIn .closeSide span:before {
+  opacity: 1;
+}
+#sidebar.slideIn .closeSide span:after {
+  transform: rotate(33deg) translateY(4px);
+  width: 14px;
+}
+#sidebar.slideIn .closeSide span {
+  transform: rotate(0deg);
+  width: 19px;
+}
+
+#sidebar.slideIn {
+  width: 0;
+}
 .navbar .btn-group {
   margin-right:0;
 }
 
 #notifications {
   margin-top: 15px;
+  white-space: pre-line;
 }
 
 #table {
   margin-right: 300px;
+  transition: margin 0.3s;
 }
-
+#table.slideIn {
+  margin-right: 0;
+}
 .dataTables_wrapper {
   padding-top:15px;
   height: 100%;
