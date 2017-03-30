@@ -5,11 +5,12 @@
   //layer will be where we store the L.geoJSON we'll be drawing on the map
   var layer;
   var sql;
+  var features;
   var currentLayer = 'Grayscale';
   var oldLayer;
   //add mapBox.light tileLayers options
 	var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-		mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
+		mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
 	var grayscale   = L.tileLayer(mbUrl, {id: 'mapbox.light', attribution: mbAttr}),
       satellite   = L.tileLayer(mbUrl, {id: 'mapbox.satellite', attribution: mbAttr}),
       dark        = L.tileLayer(mbUrl, {id: 'mapbox.dark', attribution: mbAttr}),
@@ -41,7 +42,7 @@ var overlays = [];
   
   //Listen for the baselayer changing
   map.on('baselayerchange', function(updatedLayer) {
-    if(layer){
+    if(layer &&  jQuery.inArray(layer, overlays) == -1 ){
       setColourForLayer(updatedLayer);
     }
     return currentLayer = updatedLayer;
@@ -50,6 +51,13 @@ var overlays = [];
   //listen for submit of new query
   $('#run').click(function(){
     submitQuery();
+  });
+  
+  //Only add the table when the button is clicked
+  $('.dataBtn').on('click', function() {
+    if( !($( ".dataBtn" ).hasClass( "active" )) && features) {
+        buildTable( features ); //build the DataTable
+      }
   });
 
   function submitQuery() {
@@ -62,10 +70,11 @@ var overlays = [];
     if( map.hasLayer(layer) && overlays.length == 0) {
       layer.clearLayers();
     }
+
     sql = editor.getDoc().getValue();
     
     addToHistory(sql);
-
+    
     //pass the query to the sql api endpoint
     $.getJSON('/sql?q=' + encodeURIComponent(sql), function(data) {
       $('#run').removeClass('active');
@@ -80,7 +89,7 @@ var overlays = [];
         $('#notifications').text('Your query returned no features.');
       } else {
         //convert topojson coming over the wire to geojson using mapbox omnivore
-        var features = omnivore.topojson.parse(data); //should this return a featureCollection?  Right now it's just an array of features.
+        features = omnivore.topojson.parse(data); //should this return a featureCollection?  Right now it's just an array of features.
         var featureCount = data.objects.output.geometries.length;
         var geoFeatures = features.filter(function(feature) {
           return feature.geometry;
@@ -100,8 +109,11 @@ var overlays = [];
           });
         }
 
-        buildTable( features ); //build the DataTable
-
+        //only add the table if the table is set to display - Performance
+        if( $( ".dataBtn" ).hasClass( "active" )) {
+          buildTable( features ); //build the DataTable
+        }
+        
         //Check if the layer is in the overlays array
         if(overlays.length > 0) {
           if(overlays[overlays.length-1]._leaflet_id !== oldLayer._leaflet_id){
@@ -115,7 +127,6 @@ var overlays = [];
           if(map.hasLayer(layer)) {
             return oldLayer = layer;
           }
-      
       }
     });
   };
@@ -138,14 +149,14 @@ var overlays = [];
   //Add query to overlays
   $(document).on('click', ".overlaysOption", function() {
 
-    //Remove previous label
-     addToOverlays();
-     
-    //Remove overlay buttons 
-    if($('#remove').length == 0){
-      $('.leaflet-control-container').append($("<div id='remove' class='btn btn-info'></div>").text('Delete Overlays'));
-    } else {$('#remove').removeClass('disabled')};
-  });
+      //Remove previous label
+      addToOverlays();
+      
+      //Remove overlay buttons 
+      if($('#remove').length == 0){
+        $('.leaflet-control-container').append($("<div id='remove' class='btn btn-info'></div>").text('Delete Overlays'));
+      } else {$('#remove').removeClass('disabled')};
+    });
 
   $(document).on('click', "#remove", function() {
      $('#remove').addClass('disabled');
@@ -222,32 +233,19 @@ var overlays = [];
   //Check which layer is the baselayer and then edit the layer styles
   function setColourForLayer(currentLayer) {
     switch(currentLayer.name) {
-    case 'Dark':
+    case 'Dark': case 'Satellite':
         layer.setStyle({
             color: '#fff'
         });
         break;
-    case 'Satellite':
-         layer.setStyle({
-            color: '#fff'
-        });
-        break;
-    case 'Streets':
+    case 'Streets': case 'Outdoors': default:
          layer.setStyle({
             color: '#000'
         });
         break;
-    case 'Outdoors':
-         layer.setStyle({
-            color: '#000'
-        });
-        break;
-    default:
-        layer.setStyle({
-            color: '#000'
-        });
     } 
   }
+  //Check which layer is the baselayer and then edit the layer styles
   function addLayer( features) {
     //create an L.geoJson layer, add it to the map
     layer = L.geoJson(features, {
@@ -281,6 +279,20 @@ var overlays = [];
       map.fitBounds(layer.getBounds());
       $('#notifications').empty();
   }
+  
+  function addToOverlays() {
+    if(jQuery.inArray(layer, overlays) == -1) {
+      if($('.leaflet-control-layers-list')){
+        $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
+      };
+      layer.setStyle({
+            color: '#A21B00',
+            fillColor: '#E82C0C'
+        });
+      overlays.push(layer);
+      L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
+      }
+    };
 
  function buildTable( features ) {
     //assemble a table from the geojson properties
@@ -305,24 +317,13 @@ var overlays = [];
       $('#table').find('tbody').append($tr);
     });
 
-      $('#table>table').DataTable();
+      $('#table>table').DataTable({});
   }
-
 
   function clearTable() {
     $('#table').find('thead').empty();
     $('#table').find('tfoot').empty();
     $('#table').find('tbody').empty();
-  };
-  
-  function addToOverlays() {
-    if(jQuery.inArray(layer, overlays) == -1) {
-      if($('.leaflet-control-layers-list')){
-        $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
-      };
-      overlays.push(layer);
-      L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
-    }
   };
 
   function addToHistory(sql) {
@@ -335,11 +336,11 @@ var overlays = [];
     localStorage.history = JSON.stringify(queryHistory);
     historyIndex++;
     updateHistoryButtons();
-  }
+    }
 
-  function updateSQL(sql) {
-    editor.setValue(sql);
-  }
+    function updateSQL(sql) {
+      editor.setValue(sql);
+    }
 
   //enable and disable history buttons based on length of queryHistory and historyIndex
   function updateHistoryButtons() {
