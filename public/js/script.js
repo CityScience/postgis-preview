@@ -286,8 +286,8 @@ var overlays = [];
         $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
       };
       layer.setStyle({
-            color: '#A21B00',
-            fillColor: '#E82C0C'
+            color: '#8434FF',
+            fillColor: '#A534FF'
         });
       overlays.push(layer);
       L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
@@ -296,10 +296,12 @@ var overlays = [];
 
  function buildTable( features ) {
     //assemble a table from the geojson properties
-    //first build the header row
+    //Table built to keep pagination 
     var fields = Object.keys( features[0].properties );
-    $('#table').find('thead').append('<tr/>');
-    $('#table').find('tfoot').append('<tr/>');
+    $('#table').append('<table id="example" class="table table-striped table-bordered" cellspacing="0">');
+    $('#table > table').append('<thead><tr/></thead>');
+    $('#table > table').append('<tfoot><tr/></tfoot>');
+    $('#table > table').append('<tbody></tbody>');
 
     fields.forEach( function( field ) {
       $('#table').find('thead').find('tr').append('<th>' + field + '</th>');
@@ -321,9 +323,7 @@ var overlays = [];
   }
 
   function clearTable() {
-    $('#table').find('thead').empty();
-    $('#table').find('tfoot').empty();
-    $('#table').find('tbody').empty();
+    $('#table').empty();
   };
 
   function addToHistory(sql) {
