@@ -8,6 +8,9 @@
   var features;
   var currentLayer = 'Grayscale';
   var oldLayer;
+  //different colours for the overlays
+  var colours = ['#FF0000', '#8434FF', '#FF9F0D', '#00B233', '#FFEE63'];
+  var i = 0;
   //add mapBox.light tileLayers options
 	var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 		mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -285,10 +288,12 @@ var overlays = [];
       if($('.leaflet-control-layers-list')){
         $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
       };
+      if(i >=colours.length){ return i=0;}
       layer.setStyle({
             color: '#8434FF',
-            fillColor: '#A534FF'
+            fillColor: colours[i]
         });
+        i++;
       overlays.push(layer);
       L.control.layers(baseLayers,overlays,{position:'bottomleft', collapsed:false}).addTo(map);
       }
