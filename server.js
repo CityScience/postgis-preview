@@ -11,8 +11,8 @@ require('dotenv').config();
 //create express app and prepare db connection
 var app = express(),
     port = process.env.PORT || 4000,
-    connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/postgres',
-    db = pgp(connectionString);
+    connectionParams  = process.env.DATABASE_URL || {},
+    db = pgp(connectionParams );
 
 //use express static to serve up the frontend
 app.use(express.static(__dirname + '/public'));
