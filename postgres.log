@@ -1,0 +1,55 @@
+LOG:  database system was shut down at 2017-03-31 16:51:42 BST
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+LOG:  received fast shutdown request
+LOG:  aborting any active transactions
+LOG:  autovacuum launcher shutting down
+LOG:  shutting down
+LOG:  database system is shut down
+LOG:  database system was shut down at 2017-03-31 16:53:06 BST
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "postgres" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+LOG:  received fast shutdown request
+LOG:  aborting any active transactions
+LOG:  autovacuum launcher shutting down
+LOG:  shutting down
+LOG:  database system is shut down
+LOG:  database system was shut down at 2017-03-31 17:26:40 BST
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+FATAL:  role "lmoxhay" does not exist
+FATAL:  role "lmoxhay" does not exist
+LOG:  statistics collector process (PID 8024) was terminated by exception 0xC000013A
+HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+LOG:  autovacuum launcher process (PID 2664) was terminated by exception 0xC000013A
+HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+LOG:  terminating any other active server processes
+^CLOG:  database system was shut down at 2017-03-31 17:30:35 BST
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+FATAL:  database "\dt" does not exist
+LOG:  received fast shutdown request
+LOG:  aborting any active transactions
+LOG:  autovacuum launcher shutting down
+LOG:  shutting down
+LOG:  database system is shut down

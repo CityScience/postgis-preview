@@ -1,7 +1,6 @@
 module.exports = {
   host: 'localhost',
-  user: 'yourusername',
-  password: 'yourpassword',
+  user: 'PGUSER',
   port: 5432,
-  database: 'yourdatabase'
+  database: 'PGHOST'
 }
