@@ -1,6 +1,6 @@
 {
   "name": "postgis-preview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight node api and frontend for quicky previewing PostGIS queries",
   "main": "config.js",
   "dependencies": {
@@ -19,6 +19,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Louise Moxhay <louise.moxhay@cityscience.com>",
+  "license": "ISC",
+  "repository": "git@github.com:CityScience/postgis-preview.git"
 }
