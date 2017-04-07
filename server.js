@@ -10,7 +10,7 @@ require('dotenv').config();
 
 //create express app and prepare db connection
 var app = express(),
-    port = process.env.PORT || 4000,
+    port = process.env.PORT || 5000,
     connectionParams  = process.env.DATABASE_URL || {},
     db = pgp(connectionParams );
 
