@@ -10,7 +10,6 @@
     var oldLayer;
     //different colours for the overlays
     var colours = ['#FF0000', '#8434FF', '#FF9F0D', '#00B233', '#FFEE63'];
-    var i = 0;
     //add mapBox.light tileLayers options
     var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -50,7 +49,7 @@
         "Outdoors": outdoors
     };
 
-    var overlays = [];
+    var overlays = {};
     var lcontrol = L.control.layers(baseLayers, overlays, {
         position: 'bottomleft'
     }).addTo(map);
@@ -117,7 +116,9 @@
                 $('#notifications').removeClass().addClass('alert alert-success');
                 if (geoFeatures.length) {
                     addLayer(geoFeatures, currentLayer); //draw the map layer
-                    $('#notifications').text(featureCount + ' features returned. \nClick to add to Overlays');
+                    $('#notifications').html(featureCount + ' features returned. \nName and save query:\n'+
+                    '<form class="form-inline"><input class="form-control" type="text" id="queryName" name="queryName" value="" placeholder="Query Name">'+
+                    '<input class="form-control" id="colorPicker" type="color" name="favcolor" value="#008080"><button type="submit" class="btn btn-default">Save</button></form>');
                     $('#notifications').addClass('overlaysOption');
                 } else {
                     // There is no map to display, so switch to the data view
@@ -135,6 +136,9 @@
                 }
 
                 //Check if the layer is in the overlays array
+                if (oldLayer) {
+                        map.removeLayer(oldLayer);
+                    };
                 if (overlays.length > 0) {
                     if (overlays[overlays.length - 1]._leaflet_id !== oldLayer._leaflet_id) {
                         map.removeLayer(oldLayer);
@@ -150,6 +154,7 @@
             }
         });
     };
+
 
     //toggle map and data view
     $('.btn-group button').click(function(e) {
@@ -167,21 +172,20 @@
         }
     });
     //Add query to overlays
-    $(document).on('click', ".overlaysOption", function() {
-
+    $(document).on('click', ".overlaysOption .btn", function(e) {
+        e.preventDefault();
         //Remove previous label
         addToOverlays();
-
         //Remove overlay buttons 
         if ($('#remove').length == 0) {
             $('.leaflet-control-container').append($("<div id='remove' class='btn btn-info'></div>").text('Delete Overlays'));
         } else {
-            $('#remove').removeClass('disabled')
+            $('#remove').removeClass('hide')
         };
     });
 
     $(document).on('click', "#remove", function() {
-        $('#remove').addClass('disabled');
+        $('#remove').addClass('hide');
         overlays.forEach(function(layer) {
             layer.clearLayers();
         })
@@ -190,7 +194,7 @@
         $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
         L.control.layers(baseLayers, overlays, {
             position: 'bottomleft',
-            collapsed: false
+            collapsed: true
         }).addTo(map);
         //Also stop the notification being click again 
         $('#notifications').hide();
@@ -315,15 +319,11 @@
             if ($('.leaflet-control-layers-list')) {
                 $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
             };
-            if (i >= colours.length) {
-                return i = 0;
-            }
             layer.setStyle({
-                color: '#8434FF',
-                fillColor: colours[i]
+                color: $('#colorPicker').val(),
+                fillColor: $('#colorPicker').val()
             });
-            i++;
-            overlays.push(layer);
+            overlays[$('#queryName').val()]=layer;
             L.control.layers(baseLayers, overlays, {
                 position: 'bottomleft',
                 collapsed: false
@@ -408,9 +408,6 @@ window.onload = function() {
         lineWrapping: true,
         theme: 'monokai'
     });
-    editor.replaceRange('\n', {
-        line: 2,
-        ch: 0
-    }); // create newline for editing
+    editor.replaceRange('\n', {line: 2,ch: 0}); // create newline for editing
     editor.setCursor(2, 0);
 };
