@@ -8,6 +8,7 @@
     var features;
     var currentLayer = 'Grayscale';
     var oldLayer;
+    var overlays = {};
     //different colours for the overlays
     var colours = ['#FF0000', '#8434FF', '#FF9F0D', '#00B233', '#FFEE63'];
     //add mapBox.light tileLayers options
@@ -186,10 +187,10 @@
 
     $(document).on('click', "#remove", function() {
         $('#remove').addClass('hide');
-        overlays.forEach(function(layer) {
+        $.each(overlays, function(key,layer){
             layer.clearLayers();
-        })
-        overlays = [];
+        });
+        overlays = {};
         //update the control label with the new amount of overlays
         $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
         L.control.layers(baseLayers, overlays, {
