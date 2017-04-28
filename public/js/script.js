@@ -251,7 +251,7 @@
         var banProperties = ['geom'];
         for (var k = 0; k < keys.length; k++) {
             if (banProperties.indexOf(keys[k]) === -1) {
-                var row = $("<tr></tr>");
+                var row = $("<tr class='tableData'></tr>");
                 row.append($("<td></td>").text(keys[k]));
                 row.append($("<td></td>").text(properties[keys[k]]));
                 table.append(row);
@@ -278,12 +278,34 @@
                 break;
         }
     }
-    var colorScale = chroma  
-        .scale(['#D5E3FF', '#003171'])
-        .domain([0,1]);
-    var fillColor = colorScale(0.25).hex();
+    var columnValue = '';
+    $('#map').on('click', '.tableData', function (){
+        var clickedKey = $(this).find(">:first-child").html();
+        var clickedvalue = $(this).find(">:last-child").html();
+        if($(this).closest('tbody').find('.selected').length > 0) {
+            $(this).siblings('.selected').removeClass('selected');
+        }
+        $('#heatMapped').html('<div class="alert alert-info">Heatmapped by: ' + clickedKey + '</div>');
+        $(this).addClass('selected');
+        if($.isNumeric(clickedvalue)){
+            return columnValue = clickedKey;
+        } else {
+            return columnValue = '';
+        }
+    });
     //Check which layer is the baselayer and then edit the layer styles
     function addLayer(features) {
+        if(columnValue != '') {
+            //Color range for selected column
+            var array =[];
+            $.each(features, function( index, value ) {
+                array.push(value['properties'][columnValue]);
+                return array;
+            });
+            var colorScale = chroma  
+                .scale(['#D5E3FF', '#003171'])
+                .domain([Math.min.apply(Math,array),Math.max.apply(Math,array)]);
+        }
         //create an L.geoJson layer, add it to the map
         layer = L.geoJson(features, {
             style: {
@@ -297,12 +319,13 @@
                 if (feature.geometry.type !== 'Point') {
                     layer.bindPopup(propertiesTable(feature.properties));
                 };
-                var randomValue = Math.random();
-                layer.setStyle({
-                    fillColor: fillColor = colorScale(randomValue).hex()
-                })
+                if(columnValue != '') {
+                var color = colorScale(feature['properties'][columnValue]).hex();
+                    layer.setStyle({
+                        fillColor: color
+                    })
+                }
             },
-
             pointToLayer: function(feature, latlng) {
                 return L.circleMarker(latlng, {
                     radius: 4,
@@ -319,13 +342,11 @@
         map.fitBounds(layer.getBounds());
         $('#notifications').empty();
     }
-
     function addToOverlays() {
         if (jQuery.inArray(layer, overlays) == -1) {
             if ($('.leaflet-control-layers-list')) {
                 $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
             };
-            console.log($('#colorPicker').val());
             if($('#colorPicker').val() !== '#000000'){
                 layer.setStyle({
                 color: $('#colorPicker').val(),

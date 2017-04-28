@@ -114,6 +114,13 @@ body {
   transition: margin 0.3s;
   background: #fff;
 }
+.tableData:hover {
+  background: lightblue;
+}
+.tableData.selected{
+  background: navy;
+  color: #fff;
+}
 #table.slideIn {
   margin-right: 0;
 }
