@@ -288,7 +288,9 @@
         $('#heatMapped').html('<div class="alert alert-info">Heatmapped by: ' + clickedKey + '</div>');
         $(this).addClass('selected');
         if($.isNumeric(clickedvalue)){
-            return columnValue = clickedKey;
+            columnValue = clickedKey;
+            addLayer(features); 
+            return columnValue;
         } else {
             return columnValue = '';
         }
@@ -305,7 +307,7 @@
             var colorScale = chroma  
                 .scale(['#D5E3FF', '#003171'])
                 .domain([Math.min.apply(Math,array),Math.max.apply(Math,array)]);
-        }
+            }
         //create an L.geoJson layer, add it to the map
         layer = L.geoJson(features, {
             style: {

@@ -11,7 +11,7 @@ def connection():
     """ Get a database connection using the same environment variables as `psql` """
     user = _getenv(['PGUSER', 'USER', 'USERNAME'], None)
     host = _getenv(['PGHOST'], 'localhost')
-    dbname = _getenv(['PGDATABASE'], ['PGHOST']).lower()
+    dbname = _getenv(['PGDATABASE'], ['PGHOST'])
     port = _getenv(['PGPORT'], 5432)
     conn = psycopg2.connect(host=host, database=dbname, port=port, user=user)
     conn.set_session(autocommit=True)
