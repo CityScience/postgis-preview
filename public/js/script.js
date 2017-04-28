@@ -9,8 +9,6 @@
     var currentLayer = 'Grayscale';
     var oldLayer;
     var overlays = {};
-    //different colours for the overlays
-    var colours = ['#FF0000', '#8434FF', '#FF9F0D', '#00B233', '#FFEE63'];
     //add mapBox.light tileLayers options
     var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -119,7 +117,7 @@
                     addLayer(geoFeatures, currentLayer); //draw the map layer
                     $('#notifications').html(featureCount + ' features returned. \nName and save query:\n'+
                     '<form class="form-inline"><input class="form-control" type="text" id="queryName" name="queryName" value="" placeholder="Query Name">'+
-                    '<input class="form-control" id="colorPicker" type="color" name="favcolor" value="#008080"><button type="submit" class="btn btn-default">Save</button></form>');
+                    '<input class="form-control" id="colorPicker" type="color" name="favcolor"><button type="submit" class="btn btn-default">Save</button></form>');
                     $('#notifications').addClass('overlaysOption');
                 } else {
                     // There is no map to display, so switch to the data view
@@ -280,6 +278,10 @@
                 break;
         }
     }
+    var colorScale = chroma  
+        .scale(['#D5E3FF', '#003171'])
+        .domain([0,1]);
+    var fillColor = colorScale(0.25).hex();
     //Check which layer is the baselayer and then edit the layer styles
     function addLayer(features) {
         //create an L.geoJson layer, add it to the map
@@ -291,11 +293,14 @@
                 opacity: 1,
                 fillOpacity: 0.7
             },
-
             onEachFeature: function(feature, layer) {
                 if (feature.geometry.type !== 'Point') {
                     layer.bindPopup(propertiesTable(feature.properties));
-                }
+                };
+                var randomValue = Math.random();
+                layer.setStyle({
+                    fillColor: fillColor = colorScale(randomValue).hex()
+                })
             },
 
             pointToLayer: function(feature, latlng) {
@@ -320,10 +325,13 @@
             if ($('.leaflet-control-layers-list')) {
                 $('.leaflet-bottom > .leaflet-control-layers:last-child').remove();
             };
-            layer.setStyle({
+            console.log($('#colorPicker').val());
+            if($('#colorPicker').val() !== '#000000'){
+                layer.setStyle({
                 color: $('#colorPicker').val(),
                 fillColor: $('#colorPicker').val()
             });
+            }
             overlays[$('#queryName').val()]=layer;
             L.control.layers(baseLayers, overlays, {
                 position: 'bottomleft',
