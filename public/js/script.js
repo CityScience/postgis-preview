@@ -1,7 +1,5 @@
 (function() {
     'use strict'
-
-
     //layer will be where we store the L.geoJSON we'll be drawing on the map
     var layer;
     var sql;
@@ -102,13 +100,18 @@
                 //write the error in the sidebar
                 $('#notifications').removeClass().addClass('alert alert-danger');
                 $('#notifications').text(data.error);
-            } else if (data.objects.output.geometries.length == 0) {
+            } else if (data.length == 0) {
                 $('#notifications').removeClass().addClass('alert alert-warning');
                 $('#notifications').text('Your query returned no features.');
             } else {
-                //convert topojson coming over the wire to geojson using mapbox omnivore
-                features = omnivore.topojson.parse(data); //should this return a featureCollection?  Right now it's just an array of features.
-                var featureCount = data.objects.output.geometries.length;
+                var features = data.map(function(obj){
+                    return {
+                        type:'Feature',
+                        geometry : obj.geom,
+                        properties : obj
+                    }
+                });
+                var featureCount = data.length;
                 var geoFeatures = features.filter(function(feature) {
                     return feature.geometry;
                 });
@@ -289,7 +292,6 @@
         $(this).addClass('selected');
         if($.isNumeric(clickedvalue)){
             columnValue = clickedKey;
-            addLayer(features); 
             return columnValue;
         } else {
             return columnValue = '';
