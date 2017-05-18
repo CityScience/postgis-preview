@@ -34,8 +34,11 @@ app.get('/sql', (req, res) => {
     pool.connect(function(err, client, release){        // get a connection from the pool
         if(err) {
             console.log(err);
-            res.write(JSON.stringify(error));
-            res.end()
+            var msg = err.message || err;
+            console.log("ERROR:", msg);
+            res.send({
+                error: msg
+            });
             client.release();
         }
         query = client.query(sql);                      // run the query
