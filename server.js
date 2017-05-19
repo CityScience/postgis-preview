@@ -44,17 +44,26 @@ app.get('/sql', (req, res) => {
                 error: msg
             });
             client.release();
-        }
-        query = client.query(sql);                      // run the query
+        };
+        query = client.query(sql);
+        // run the query
         var count = 0;
         query.on('row', row => {                        // process the rows to json array
-            // delete row['geom']
             if (row['geom']){
-                row['geom'] = wkx.Geometry.parse(new Buffer(row['geom'], 'hex')).toGeoJSON();
+                var wkbBuffer = new Buffer(row['geom'], 'hex');
+                row['geom'] = wkx.Geometry.parse(wkbBuffer).toGeoJSON();
+                dbgeo.parse(wkbBuffer, {
+                    outputFormat: 'topojson',
+                }, function(error, result){
+                    if(error){
+                        console.log(error);
+                    }
+                    console.log(result);
+                    // return result;
+                });
             }
             res.write(count == 0 ? '[\n' : ',\n');
             res.write(JSON.stringify(row));
-            
             count += 1;
         });
         query.on('end', results => {
@@ -66,14 +75,29 @@ app.get('/sql', (req, res) => {
     });
 });
 
-function dbGeoParse(){
-    return through(function write(row) {
-        row['geom'] = wkx.Geometry.parse(new Buffer(row['geom'], 'hex')).toGeoJSON()
-        this.queue(row)
-    }, function end(){
-        this.queue(null);
+function dbGeoParse(data, format) {
+    return new Promise(function (resolve, reject) {
+        dbgeo.parse(data, {
+            outputFormat: format
+        }, function (err, result) {
+            if (err) {
+                reject(err);
+            } else {
+                console.log(JSON.stringify(result))
+                resolve(result);
+            }
+        });
     });
 }
+
+// function dbGeoParse(){
+//     return through(function write(row) {
+//         row['geom'] = wkx.Geometry.parse(new Buffer(row['geom'], 'hex')).toGeoJSON()
+//         this.queue(row)
+//     }, function end(){
+//         this.queue(null);
+//     });
+// }
 
 
 function jsonExport(data) {

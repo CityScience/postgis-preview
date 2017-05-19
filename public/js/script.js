@@ -93,6 +93,7 @@
 
         //pass the query to the sql api endpoint
         $.getJSON('/sql?q=' + encodeURIComponent(sql), function(data) {
+            console.log(data);
             $('#run').removeClass('active');
             $('#notifications').show();
             $('#download').show();
