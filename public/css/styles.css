@@ -98,14 +98,31 @@ body {
 .navbar .btn-group {
   margin-right:0;
 }
-
+#remove {
+  z-index: 500;
+  position: absolute;
+  left: 120px;
+  bottom: 20px;
+}
 #notifications {
   margin-top: 15px;
+  white-space: pre-line;
 }
 
 #table {
   margin-right: 300px;
   transition: margin 0.3s;
+  background: #fff;
+}
+.leaflet-popup-content td,.leaflet-popup-content th {
+  padding: 0 4px;
+}
+.tableData.clickable:hover {
+  background: lightblue;
+}
+.tableData.selected{
+  background: navy;
+  color: #fff;
 }
 #table.slideIn {
   margin-right: 0;
@@ -167,4 +184,22 @@ body {
 .leaflet-popup-content {
   max-height: 50vh;
   overflow-y: scroll;
+}
+.lert-success.overlaysOption {
+  line-height: 2em;
+}
+#colorPicker {
+  min-width: 51px;
+  margin-left: 8px;
+  margin-top: 5px;
+}
+.form-inline .btn {
+  margin-top: 5px;
+  margin-left: 10px;
+}
+/*MEDIA QUERY*/
+@media (max-width: 770px) {
+  #container {
+    padding-top: 50px;
+  }
 }

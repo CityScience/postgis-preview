@@ -5,54 +5,68 @@
 var express = require('express'),
     pgp = require('pg-promise')(),
     dbgeo = require('dbgeo'),
-    jsonexport = require('jsonexport');
+    pg = require('pg'),
+    QueryStream = require('pg-query-stream'),
+    JSONStream = require('JSONStream'),
+    jsonexport = require('jsonexport'),
+    stream = require('stream'),
+    Pool = require('pg-pool'),
+    wkx = require('wkx'),
+    topojson = require('topojson'),
+    Buffer = require('buffer').Buffer;
 require('dotenv').config();
 
 //create express app and prepare db connection
 var app = express(),
     port = process.env.PORT || 4000,
-    connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/postgres',
-    db = pgp(connectionString);
+    connectionParams  = process.env.DATABASE_URL || {},
+    db = pgp(connectionParams ),
+    poolConfig = {max: 5, min: 1, 
+        database: process.env.PGUSER,
+        user: process.env.PGUSER,
+        port: process.env.PGPORT}
+    pool = new Pool(poolConfig);
 
 //use express static to serve up the frontend
 app.use(express.static(__dirname + '/public'));
 
-//expose sql endpoint, grab query as URL parameter and send it to the database
-app.get('/sql', function (req, res) {
+app.get('/sql', (req, res) => {
     var sql = req.query.q;
     var format = req.query.format || 'topojson';
     console.log('Executing SQL: ' + sql, format);
-
-    //query using pg-promise
-    db.any(sql)
-        .then(function (data) { //use dbgeo to convert WKB from PostGIS into topojson
-            switch (format) {
-                case 'csv':
-                    return jsonExport(data).then(function (data) {
-                        res.setHeader('Content-disposition', 'attachment; filename=query.csv');
-                        res.setHeader('Content-Type', 'text/csv');
-                        return data;
-                    });
-                case 'geojson':
-                    return dbGeoParse(data, format).then(function (data) {
-                        res.setHeader('Content-disposition', 'attachment; filename=query.geojson');
-                        res.setHeader('Content-Type', 'application/json');
-                        return data;
-                    });
-                default:
-                    return dbGeoParse(data, format);
-            }
-        })
-        .then(function (data) {
-            res.send(data);
-        })
-        .catch(function (err) { //send the error message if the query didn't work
+    res.set('Content-Type', 'text/plain');
+    pool.connect(function(err, client, release){        // get a connection from the pool
+        if(err) {
+            console.log(err);
             var msg = err.message || err;
             console.log("ERROR:", msg);
             res.send({
                 error: msg
             });
+            client.release();
+        };
+        query = client.query(sql);
+        // run the query
+        var count = 0;
+        query.on('row', row => {                        // process the rows to json array
+            if (row['geom']){
+                var wkbBuffer = new Buffer(row['geom'], 'hex');
+                wkbBufferRow = wkx.Geometry.parse(wkbBuffer).toGeoJSON();
+                topologyRow  = topojson.topology({output: wkbBufferRow});
+                presimplifyRow = topojson.presimplify(topologyRow);
+                row['geom'] = topojson.simplify(presimplifyRow); //No effect on point or multipoint 
+            }
+            res.write(count == 0 ? '[\n' : ',\n');
+            res.write(JSON.stringify(row));
+            count += 1;
         });
+        query.on('end', results => {
+            console.log('release')
+            res.write(']\n')                            // close the array
+            res.end()                                   // close the response
+            client.release();                                  // return the db connection
+        });
+    });
 });
 
 function dbGeoParse(data, format) {
@@ -63,12 +77,12 @@ function dbGeoParse(data, format) {
             if (err) {
                 reject(err);
             } else {
+                console.log(JSON.stringify(result))
                 resolve(result);
             }
         });
     });
 }
-
 
 function jsonExport(data) {
     //remove geom
