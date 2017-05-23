@@ -22,7 +22,7 @@ var app = express(),
     connectionParams  = process.env.DATABASE_URL || {},
     db = pgp(connectionParams ),
     poolConfig = {max: 5, min: 1, 
-        database: process.env.PGUSER,
+        database: process.env.PGDATABASE,
         user: process.env.PGUSER,
         port: process.env.PGPORT}
     pool = new Pool(poolConfig);
