@@ -7,6 +7,10 @@
     var currentLayer = 'Grayscale';
     var oldLayer;
     var overlays = {};
+    var geoFeatures;
+    var featureCount;
+    var features;
+    var tableNeedsLoading = true;
     //add mapBox.light tileLayers options
     var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -83,7 +87,7 @@
 
         clearTable();
         //Clear the layers if there are no overlays
-        if (map.hasLayer(layer) && overlays.length == 0) {
+        if (map.hasLayer(layer) && Object.keys(overlays).length == 0) {
             layer.clearLayers();
         }
 
@@ -93,7 +97,6 @@
 
         //pass the query to the sql api endpoint
         $.getJSON('/sql?q=' + encodeURIComponent(sql), function(data) {
-            console.log(data);
             $('#run').removeClass('active');
             $('#notifications').show();
             $('#download').show();
@@ -101,19 +104,23 @@
                 //write the error in the sidebar
                 $('#notifications').removeClass().addClass('alert alert-danger');
                 $('#notifications').text(data.error);
-            } else if (data.length == 0) {
+            } else if (data[0].geom.length == 0) {
                 $('#notifications').removeClass().addClass('alert alert-warning');
                 $('#notifications').text('Your query returned no features.');
             } else {
-                var features = data.map(function(obj){
+                //convert topojson coming over the wire to geojson using mapbox omnivore
+                features = data.map(function(obj){
+                    var placeHolder = omnivore.topojson.parse(obj.geom);
+                    delete obj['geom'];
                     return {
                         type:'Feature',
-                        geometry : obj.geom,
+                        geometry : placeHolder[0].geometry,
                         properties : obj
                     }
                 });
-                var featureCount = data.length;
-                var geoFeatures = features.filter(function(feature) {
+                console.log('data mapped')
+                featureCount = data.length;
+                geoFeatures = features.filter(function(feature) {
                     return feature.geometry;
                 });
                 $('#notifications').removeClass().addClass('alert alert-success');
@@ -121,7 +128,7 @@
                     addLayer(geoFeatures, currentLayer); //draw the map layer
                     $('#notifications').html(featureCount + ' features returned. \nName and save query:\n'+
                     '<form class="form-inline"><input class="form-control" type="text" id="queryName" name="queryName" value="" placeholder="Query Name">'+
-                    '<input class="form-control" id="colorPicker" type="color" name="favcolor"><button type="submit" class="btn btn-default">Save</button></form>');
+                    '<input class="form-control" id="colorPicker" type="color" name="favcolor" value="#4682b4" ><button type="submit" class="btn btn-default">Save</button></form>');
                     $('#notifications').addClass('overlaysOption');
                 } else {
                     // There is no map to display, so switch to the data view
@@ -255,9 +262,15 @@
         var banProperties = ['geom'];
         for (var k = 0; k < keys.length; k++) {
             if (banProperties.indexOf(keys[k]) === -1) {
-                var row = $("<tr class='tableData'></tr>");
-                row.append($("<td></td>").text(keys[k]));
-                row.append($("<td></td>").text(properties[keys[k]]));
+                if( (isNaN(properties[keys[k]]))) {
+                     var row = $("<tr class='tableData'></tr>");
+                    row.append($("<td></td>").text(keys[k]));
+                     row.append($("<td></td>").text(properties[keys[k]]));
+                } else {
+                     var row = $("<tr class='tableData clickable'></tr>");
+                    row.append($("<td></td>").text(keys[k]));
+                    row.append($("<td></td>").text(properties[keys[k]]));
+                }
                 table.append(row);
             }
         }
@@ -283,7 +296,7 @@
         }
     }
     var columnValue = '';
-    $('#map').on('click', '.tableData', function (){
+    $('#map').on('click', '.tableData.clickable', function (){
         var clickedKey = $(this).find(">:first-child").html();
         var clickedvalue = $(this).find(">:last-child").html();
         if($(this).closest('tbody').find('.selected').length > 0) {
@@ -291,12 +304,13 @@
         }
         $('#heatMapped').html('<div class="alert alert-info">Heatmapped by: ' + clickedKey + '</div>');
         $(this).addClass('selected');
-        if($.isNumeric(clickedvalue)){
-            columnValue = clickedKey;
-            return columnValue;
-        } else {
-            return columnValue = '';
-        }
+        columnValue = clickedKey;
+        map.removeLayer(oldLayer);
+        addLayer(geoFeatures);
+        $('#notifications').html(featureCount + ' features returned. \nName and save query:\n'+
+        '<form class="form-inline"><input class="form-control" type="text" id="queryName" name="queryName" value="" placeholder="Query Name">'+
+        '<input class="form-control" id="colorPicker" type="color" name="favcolor"><button type="submit" class="btn btn-default">Save</button></form>');
+        $('#notifications').addClass('overlaysOption');
     });
     //Check which layer is the baselayer and then edit the layer styles
     function addLayer(features) {
@@ -324,7 +338,7 @@
                 if (feature.geometry.type !== 'Point') {
                     layer.bindPopup(propertiesTable(feature.properties));
                 };
-                if(columnValue != '') {
+                if(columnValue !== '' && feature['properties'][columnValue] != undefined) {
                 var color = colorScale(feature['properties'][columnValue]).hex();
                     layer.setStyle({
                         fillColor: color
@@ -369,32 +383,37 @@
     function buildTable(features) {
         //assemble a table from the geojson properties
         //Table built to keep pagination 
-        var fields = Object.keys(features[0].properties);
-        $('#table').append('<table id="example" class="table table-striped table-bordered" cellspacing="0">');
-        $('#table > table').append('<thead><tr/></thead>');
-        $('#table > table').append('<tfoot><tr/></tfoot>');
-        $('#table > table').append('<tbody></tbody>');
-
-        fields.forEach(function(field) {
-            $('#table').find('thead').find('tr').append('<th>' + field + '</th>');
-            $('#table').find('tfoot').find('tr').append('<th>' + field + '</th>')
-        });
-
-        features.forEach(function(feature) {
-            //create tr with tds in memory
-            var $tr = $('<tr/>');
+        //Check if the table needs to be loaded 
+        if(tableNeedsLoading){
+            var fields = Object.keys(features[0].properties);
+            $('#table').append('<table id="example" class="table table-striped table-bordered" cellspacing="0">');
+            $('#table > table').append('<thead><tr/></thead>');
+            $('#table > table').append('<tfoot><tr/></tfoot>');
+            $('#table > table').append('<tbody></tbody>');
 
             fields.forEach(function(field) {
-                $tr.append('<td>' + feature.properties[field] + '</td>')
-            })
+                $('#table').find('thead').find('tr').append('<th>' + field + '</th>');
+                $('#table').find('tfoot').find('tr').append('<th>' + field + '</th>')
+            });
 
-            $('#table').find('tbody').append($tr);
-        });
+            features.forEach(function(feature) {
+                //create tr with tds in memory
+                var $tr = $('<tr/>');
 
-        $('#table>table').DataTable({});
+                fields.forEach(function(field) {
+                    $tr.append('<td>' + feature.properties[field] + '</td>')
+                })
+
+                $('#table').find('tbody').append($tr);
+            });
+
+            $('#table>table').DataTable({});
+            tableNeedsLoading = false;
+        }
     }
 
     function clearTable() {
+        tableNeedsLoading = true;
         $('#table').empty();
     };
 

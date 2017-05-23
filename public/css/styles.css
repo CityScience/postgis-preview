@@ -114,10 +114,13 @@ body {
   transition: margin 0.3s;
   background: #fff;
 }
-.tableData:hover {
+.leaflet-popup-content td,.leaflet-popup-content th {
+  padding: 0 4px;
+}
+.tableData.clickable:hover {
   background: lightblue;
 }
-.tableData.selected{
+.tableData.clickable.selected{
   background: navy;
   color: #fff;
 }

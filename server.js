@@ -12,9 +12,9 @@ var express = require('express'),
     stream = require('stream'),
     Pool = require('pg-pool'),
     wkx = require('wkx'),
+    topojson = require('topojson'),
     Buffer = require('buffer').Buffer;
 require('dotenv').config();
-
 
 //create express app and prepare db connection
 var app = express(),
@@ -51,16 +51,10 @@ app.get('/sql', (req, res) => {
         query.on('row', row => {                        // process the rows to json array
             if (row['geom']){
                 var wkbBuffer = new Buffer(row['geom'], 'hex');
-                row['geom'] = wkx.Geometry.parse(wkbBuffer).toGeoJSON();
-                dbgeo.parse(wkbBuffer, {
-                    outputFormat: 'topojson',
-                }, function(error, result){
-                    if(error){
-                        console.log(error);
-                    }
-                    console.log(result);
-                    // return result;
-                });
+                wkbBufferRow = wkx.Geometry.parse(wkbBuffer).toGeoJSON();
+                topologyRow  = topojson.topology({output: wkbBufferRow});
+                presimplifyRow = topojson.presimplify(topologyRow);
+                row['geom'] = topojson.simplify(presimplifyRow); //No effect on point or multipoint 
             }
             res.write(count == 0 ? '[\n' : ',\n');
             res.write(JSON.stringify(row));
@@ -89,16 +83,6 @@ function dbGeoParse(data, format) {
         });
     });
 }
-
-// function dbGeoParse(){
-//     return through(function write(row) {
-//         row['geom'] = wkx.Geometry.parse(new Buffer(row['geom'], 'hex')).toGeoJSON()
-//         this.queue(row)
-//     }, function end(){
-//         this.queue(null);
-//     });
-// }
-
 
 function jsonExport(data) {
     //remove geom
