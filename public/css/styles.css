@@ -120,7 +120,7 @@ body {
 .tableData.clickable:hover {
   background: lightblue;
 }
-.tableData.clickable.selected{
+.tableData.selected{
   background: navy;
   color: #fff;
 }
@@ -191,9 +191,11 @@ body {
 #colorPicker {
   min-width: 51px;
   margin-left: 8px;
+  margin-top: 5px;
 }
 .form-inline .btn {
   margin-top: 5px;
+  margin-left: 10px;
 }
 /*MEDIA QUERY*/
 @media (max-width: 770px) {

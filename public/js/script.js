@@ -11,6 +11,7 @@
     var featureCount;
     var features;
     var tableNeedsLoading = true;
+    var columnValue = '';
     //add mapBox.light tileLayers options
     var mbAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
         mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibG1veGhheSIsImEiOiJjajB0YzM0cXIwMDF6MzNtZHdyZ3J4anFhIn0.FSi3dh1eb4vVOGMtI9ONJA';
@@ -100,10 +101,14 @@
             $('#run').removeClass('active');
             $('#notifications').show();
             $('#download').show();
-            if (data.error !== undefined) {
+            if (data.error !== undefined || !data[0].geom) {
                 //write the error in the sidebar
                 $('#notifications').removeClass().addClass('alert alert-danger');
-                $('#notifications').text(data.error);
+                if(data.error) {
+                    $('#notifications').text(data.error);
+                }else {
+                    $('#notifications').text('Sorry no Geom field was found' );
+                }
             } else if (data[0].geom.length == 0) {
                 $('#notifications').removeClass().addClass('alert alert-warning');
                 $('#notifications').text('Your query returned no features.');
@@ -118,7 +123,6 @@
                         properties : obj
                     }
                 });
-                console.log('data mapped')
                 featureCount = data.length;
                 geoFeatures = features.filter(function(feature) {
                     return feature.geometry;
@@ -259,20 +263,23 @@
         }
         var table = $("<table><tr><th>Column</th><th>Value</th></tr></table>");
         var keys = Object.keys(properties);
-        var banProperties = ['geom'];
         for (var k = 0; k < keys.length; k++) {
-            if (banProperties.indexOf(keys[k]) === -1) {
-                if( (isNaN(properties[keys[k]]))) {
-                     var row = $("<tr class='tableData'></tr>");
+            if( (isNaN(properties[keys[k]]))) {
+                var row = $("<tr class='tableData'></tr>");
+                row.append($("<td></td>").text(keys[k]));
+                row.append($("<td></td>").text(properties[keys[k]]));
+            } else {
+                if(columnValue !== '' && columnValue == [keys[k]]){
+                    var row = $("<tr class='tableData selected'></tr>");
                     row.append($("<td></td>").text(keys[k]));
-                     row.append($("<td></td>").text(properties[keys[k]]));
+                    row.append($("<td></td>").text(properties[keys[k]]));
                 } else {
-                     var row = $("<tr class='tableData clickable'></tr>");
+                    var row = $("<tr class='tableData clickable'></tr>");
                     row.append($("<td></td>").text(keys[k]));
                     row.append($("<td></td>").text(properties[keys[k]]));
                 }
-                table.append(row);
             }
+            table.append(row);
         }
         return '<table border="1">' + table.html() + '</table>';
     }
@@ -295,7 +302,6 @@
                 break;
         }
     }
-    var columnValue = '';
     $('#map').on('click', '.tableData.clickable', function (){
         var clickedKey = $(this).find(">:first-child").html();
         var clickedvalue = $(this).find(">:last-child").html();
@@ -303,9 +309,9 @@
             $(this).siblings('.selected').removeClass('selected');
         }
         $('#heatMapped').html('<div class="alert alert-info">Heatmapped by: ' + clickedKey + '</div>');
-        $(this).addClass('selected');
+        $(this).addClass('selected').removeClass('selected');
         columnValue = clickedKey;
-        map.removeLayer(oldLayer);
+        map.removeLayer(layer);
         addLayer(geoFeatures);
         $('#notifications').html(featureCount + ' features returned. \nName and save query:\n'+
         '<form class="form-inline"><input class="form-control" type="text" id="queryName" name="queryName" value="" placeholder="Query Name">'+
@@ -322,7 +328,7 @@
                 return array;
             });
             var colorScale = chroma  
-                .scale(['#D5E3FF', '#003171'])
+                .scale(['#edf8b1', '#2c7fb8'])
                 .domain([Math.min.apply(Math,array),Math.max.apply(Math,array)]);
             }
         //create an L.geoJson layer, add it to the map
