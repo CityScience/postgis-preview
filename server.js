@@ -52,7 +52,7 @@ app.get('/sql', (req, res) => {
                 error: msg
             });
             client.release();
-        };
+        }
         query = client.query(sql);
         // run the query
         var count = 0;
@@ -69,11 +69,19 @@ app.get('/sql', (req, res) => {
             count += 1;
         });
         query.on('end', results => {
-            // console.log(poolConfigTest);
             console.log('release');
             res.write(']\n');                            // close the array
             res.end();                                   // close the response
-            client.release();                                  // return the db connection
+            client.release();                            // return the db connection
+        });
+        query.catch(err => {
+            console.log(err);
+            var msg = err.message || err;
+            console.log("ERROR:", msg);
+            res.send({
+                error: msg
+            });
+            client.release();
         });
     });
 });
