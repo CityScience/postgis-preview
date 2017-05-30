@@ -12,7 +12,8 @@ The frontend is a simple Bootstrap layout with a Leaflet map, CartoDB basemaps, 
 
 - Clone this repo
 - Have a PostGIS instance running somewhere that the node app can talk to
-- Make sure you have set up PGUSER and PGHOST on you computer so it can talk to your local database [see here for more information](https://github.com/CityScience/team-handbook/blob/master/howtos/postgres/connecting.md)
+- Set you enviroment variables, these can be set up on you computer or by setting them in .env.sample and renmaing it .env
+    Its looking for any of the following DATABASE_URL or PGDATABASE, PGPORT, PGUSER, PGHOST [see here for more information](https://github.com/CityScience/team-handbook/blob/master/howtos/postgres/connecting.md)
 - Install dependencies `yarn install`
 - Run the express app `node server.js`
 - Load the frontend `http://localhost:4000`
