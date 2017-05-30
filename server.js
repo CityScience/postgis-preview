@@ -14,20 +14,28 @@ var express = require('express'),
     wkx = require('wkx'),
     topojson = require('topojson'),
     Buffer = require('buffer').Buffer;
-require('dotenv').config();
+    url = require('url');
+    require('dotenv').config();
 
-//create express app and prepare db connection
+//If a Database url is set it will use it, else it will use other variables
+if(process.env.DATABASE_URL){
+    const params = url.parse(process.env.DATABASE_URL);
+    const auth = params.auth.split(':');
+    var port = params.port || 4000;
+    var poolConfigTest = {max: 5, min: 1, 
+            database: params.pathname.split('/')[1],
+            user: auth[0],
+            host: params.hostname};
+} else {
+    var port = process.env.PGPORT || 4000;
+    var poolConfig = {max: 5, min: 1, 
+            database: process.env.PGDATABASE,
+            user: process.env.PGUSER,
+            host: process.env.PGHOST || 'localhost'};
+};
 var app = express(),
-    port = process.env.PORT || 4000,
-    connectionParams  = process.env.DATABASE_URL || {},
-    db = pgp(connectionParams ),
-    poolConfig = {max: 5, min: 1, 
-        database: process.env.PGDATABASE,
-        user: process.env.PGUSER,
-        port: process.env.PGPORT}
     pool = new Pool(poolConfig);
 
-//use express static to serve up the frontend
 app.use(express.static(__dirname + '/public'));
 
 app.get('/sql', (req, res) => {
@@ -61,45 +69,14 @@ app.get('/sql', (req, res) => {
             count += 1;
         });
         query.on('end', results => {
-            console.log('release')
-            res.write(']\n')                            // close the array
-            res.end()                                   // close the response
+            // console.log(poolConfigTest);
+            console.log('release');
+            res.write(']\n');                            // close the array
+            res.end();                                   // close the response
             client.release();                                  // return the db connection
         });
     });
 });
-
-function dbGeoParse(data, format) {
-    return new Promise(function (resolve, reject) {
-        dbgeo.parse(data, {
-            outputFormat: format
-        }, function (err, result) {
-            if (err) {
-                reject(err);
-            } else {
-                console.log(JSON.stringify(result))
-                resolve(result);
-            }
-        });
-    });
-}
-
-function jsonExport(data) {
-    //remove geom
-    data.forEach(function (row) {
-        delete row.geom;
-    });
-
-    return new Promise(function (resolve, reject) {
-        jsonexport(data, function (err, csv) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(csv);
-            }
-        });
-    });
-}
 
 //start the server
 app.listen(port);
